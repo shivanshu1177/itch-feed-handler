@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build",
+                "--parallel"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "CMake build"
+        },
+        {
+            "label": "Test",
+            "type": "shell",
+            "command": "ctest",
+            "args": [
+                "--test-dir",
+                "build",
+                "--output-on-failure"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Benchmark",
+            "type": "shell",
+            "command": "./build/benchmarks/bench_level2_book",
+            "group": "test",
+            "problemMatcher": []
+        }
+    ]
+}
+
