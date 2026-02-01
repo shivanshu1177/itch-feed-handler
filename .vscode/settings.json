@@ -1,0 +1,7 @@
+{
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "C_Cpp.default.cppStandard": "c++20"
+}
+
