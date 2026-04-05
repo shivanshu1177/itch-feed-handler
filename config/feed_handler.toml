@@ -1,0 +1,76 @@
+[sharding]
+# Fraction of SHARD_QUEUE_DEPTH at which ParserThread yields to let
+# ShardWorkers drain. 0.8 = alert when queue is 80% full (209,715 / 262,144 entries).
+queue_full_alert_threshold = 0.8
+
+[network]
+multicast_group = "233.54.12.111"
+port = 26477
+interface = "0.0.0.0"
+# B-feed (secondary A/B line) — remove or leave multicast_group_secondary empty to disable.
+# When configured, FeedMerger joins both groups, deduplicates by sequence number,
+# and automatically fails over to secondary if primary is silent for failover_timeout_ms.
+# multicast_group_secondary = "233.54.12.112"
+# port_secondary = 26477
+# interface_secondary = "0.0.0.0"
+failover_timeout_ms = 5000
+
+[sharding]
+num_shards = 8
+queue_depth = 262144  # per-shard SPSC depth
+
+[memory]
+orders_per_shard = 2000000
+packet_ring_depth = 65536
+
+[threads]
+receiver_core = 1
+parser_core = 2
+shard_cores = [3, 4, 5, 6, 7, 8, 9, 10]
+recovery_core = 11
+merger_core = 12   # FeedMerger (SCHED_FIFO 77); secondary receiver uses core merger_core+1
+
+[monitoring]
+report_interval_sec = 10
+latency_histogram_max_us = 100
+
+[recovery]
+gap_timeout_ms = 500
+snapshot_interval_sec = 60
+# Primary MoldUDP64 retransmit server (NASDAQ SoupTCP / SGX equivalent).
+# REQUIRED — 198.51.100.1 is the RFC 5737 placeholder; the process will
+# exit(1) if this is not overridden to a real recovery server address.
+retransmit_address = "10.0.1.10"
+retransmit_port = 17001
+# SoupBinTCP login credentials.
+# require_login = false → skip handshake (unauthenticated test/simulation feeds).
+# On login rejection the process exits immediately (misconfiguration, not transient).
+require_login = false
+retransmit_username = ""
+retransmit_password = ""
+# Secondary retransmit server — optional dual-feed / cross-connect path.
+# Remove or leave address empty to disable.
+# retransmit_address_secondary = "10.0.1.11"
+# retransmit_port_secondary = 17001
+# Snapshot storage. {session} and {timestamp} are expanded at save time.
+# Directory is created (mode 0755) at startup if absent.
+snapshot_directory = "/var/lib/itch/snapshots"
+snapshot_filename_template = "itch_{session}_{timestamp}.snap"
+
+[session]
+# "AUTO_DETECT": session name is populated from the first received MoldUDP64
+# session field. Set explicitly (e.g. "STRT00000T") to pre-seed the tracker.
+initial_session = "AUTO_DETECT"
+# true → save EOD snapshot on 'Q' / 'M' SystemEvent before state→Closed.
+eod_archive_enabled = true
+# Symbols to activate during PreOpen for warmup (8-char space-padded ITCH format).
+# Books for these symbols are activated early so they are ready when the
+# market opens. Leave empty to disable warmup.
+watched_symbols = ["AAPL    ", "MSFT    "]
+
+[persistence]
+# Directory for last_sequence.bin — the durable warm-start state file.
+# The process must have read+write access. Create before first run:
+#   install -d -m 755 -o itch /var/lib/itch
+last_sequence_dir = "/var/lib/itch"
+
